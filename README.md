@@ -3,7 +3,7 @@
 A secure, local password manager built with Python's Tkinter library. This desktop application allows you to generate strong passwords, save credentials for multiple accounts, and view them securely, protected by a user-created master password.
 
 ![App Screenshot](img.png)
-![Demonstracion of App](PasswordManagerTester.gif)
+![Demonstracion of App](PasswordManagerTest.gif)
 
 ## Features
 
