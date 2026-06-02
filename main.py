@@ -62,28 +62,24 @@ def save():
 
         # --- NEW LOGIC FOR HANDLING MULTIPLE ACCOUNTS ---
         if website in data:
-            # If the website already exists, append the new credential to its list
             data[website].append(new_credential)
         else:
-            # If it's a new website, create a new list with the credential
             data[website] = [new_credential]
 
         try:
             with open(DATA_FILE, "w") as data_file:
-                # Saving the update data in archive
                 json.dump(data, data_file, indent=4)
         except IOError:
             messagebox.showerror(title="File Error", message=f"Could not save to file {DATA_FILE}.")
         else:
             messagebox.showinfo(title="Success!", message="Your password has been saved successfully.")
         finally:
-            # Clean fields after trying to save it
             input_web.delete(0, END)
             input_user.delete(0, END)
             input_password.delete(0, END)
 
 
-# --- NEW --- MASTER PASSWORD HELPER FUNCTIONS ---
+# --- MASTER PASSWORD HELPER FUNCTIONS ---
 def get_master_password_hash():
     """Tries to load the master password hash from the config file."""
     try:
@@ -102,17 +98,29 @@ def set_master_password_hash(password):
     return password_hash
 
 
-# --- MAJOR REFACTOR --- VIEW/SEARCH PASSWORD LOGIC ---
+# --- VIEW/SEARCH PASSWORD LOGIC ---
 def find_password():
-    """Main controller function that decides whether to ask for creation or verification."""
-    master_hash = get_master_password_hash()
-    if not master_hash:
-        # No master password exists, ask to create one
-        if messagebox.askyesno("Setup Required", "No Master Password has been set. Would you like to create one?"):
-            prompt_to_create_master_password()
+    website = input_web.get()
+    if not website:
+        messagebox.showinfo(title="Oops", message="Please enter a website to search.")
+        return
+
+    try:
+        with open(DATA_FILE, "r") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="Error", message="No data file found.")
     else:
-        # Master password exists, ask for it
-        prompt_for_master_password(master_hash)
+        if website in data:
+            credentials_list = data[website]
+            message = ""
+            for credential in credentials_list:
+                email = credential.get('username', 'N/A')
+                password = credential.get('password', 'N/A')
+                message += f"Email: {email}\nPassword: {password}\n\n"
+            messagebox.showinfo(title=website, message=message.strip())
+        else:
+            messagebox.showinfo(title="Error", message=f"No details for {website} exist.")
 
 
 def prompt_to_create_master_password():
@@ -204,8 +212,6 @@ def show_passwords_window():
     tree.column("Password", width=200)
 
     # ---LOGIC FOR DISPLAYING THE DATA ---
-    # We have a nested loop. The outer loop gets the website and the list of credentials.
-    # The inner loop goes through each credential in the list.
     for website, credentials_list in data.items():
         for credential in credentials_list:
             tree.insert("", END, values=(website, credential['username'], credential['password']))
@@ -293,10 +299,10 @@ canvas.logo_img = logo_img
 canvas.create_image(100, 100, image=logo_img)
 canvas.grid(row=0, column=0, columnspan=3, pady= 20)
 
-#--- LABELS & ENTIES ---
+#--- LABELS & ENTRIES ---
 Label(text= "Website:", font=FONT, bg= COLOR_BACKGROUND, fg=COLOR_TEXT).grid(row=1, column=0, sticky="w")
-input_web = Entry(highlightthickness=0)
-input_web.grid(row= 1, column=1, columnspan=2, padx=5, pady=5, sticky="ew")
+input_web = Entry(highlightthickness=0, width=21)
+input_web.grid(row= 1, column=1, padx=5, pady=5, sticky="ew")
 input_web.focus()
 
 Label(text= "Email/Username:", font=FONT, bg= COLOR_BACKGROUND, fg=COLOR_TEXT).grid(row=2, column=0, sticky="w")
@@ -308,9 +314,9 @@ input_password = Entry(highlightthickness=0, show="*")
 input_password.grid(row= 3, column=1, padx=5, pady=5, sticky="ew")
 
 #--- BUTTONS ---
-Button(text="Generate password", bg=COLOR_PRIMARY_RED, fg=COLOR_WHITE, activebackground=COLOR_LIGHT_RED,command = generate_password).grid(row= 3, column=2, padx=5, pady=5, sticky="ew")
+Button(text="Search", width=13, bg=COLOR_SECONDARY_ACCENT, fg=COLOR_WHITE, activebackground=COLOR_LIGHT_RED, command=find_password).grid(row=1, column=2, padx=5, pady=5, sticky="ew")
+Button(text="Generate password", width=13, bg=COLOR_PRIMARY_RED, fg=COLOR_WHITE, activebackground=COLOR_LIGHT_RED,command = generate_password).grid(row= 3, column=2, padx=5, pady=5, sticky="ew")
 Button(text="Add", width=36, bg=COLOR_PRIMARY_RED, fg=COLOR_WHITE, activebackground=COLOR_LIGHT_RED,command = save).grid(row= 4 , column=1, columnspan= 2, padx=5, pady=5, sticky="ew")
-Button(text="Search", bg=COLOR_SECONDARY_ACCENT, fg=COLOR_WHITE, activebackground=COLOR_LIGHT_RED, command=find_password).grid(row=4, column=0, padx=5, pady=5, sticky="ew")
 
 # Configure the grid to allow the center column to expand
 window.grid_columnconfigure(1, weight=1)
